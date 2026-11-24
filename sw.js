@@ -1,4 +1,4 @@
-const CACHE = 'fitforge12-static-v5';
+const CACHE = 'fitforge12-static-v6';
 const CACHE_PREFIX = 'fitforge12-static-';
 const APP_SCOPE = new URL(self.registration.scope);
 const APP_SHELL = new URL('index.html', APP_SCOPE);

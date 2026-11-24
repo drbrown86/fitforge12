@@ -38,8 +38,7 @@ const smartFood = (() => {
   }
 
   async function usda(term, signal) {
-    const params = new URLSearchParams({query: term, api_key: 'DEMO_KEY', pageSize: '12'});
-    for (const type of ['Foundation', 'SR Legacy', 'Survey (FNDDS)']) params.append('dataType', type);
+    const params = new URLSearchParams({query: term, api_key: 'DEMO_KEY', pageSize: '12', dataType: 'SR Legacy'});
     const data = await json('https://api.nal.usda.gov/fdc/v1/foods/search?' + params, signal);
     return (data.foods || []).flatMap(food => {
       const values = [1008, 1003, 1005, 1004].map(id =>
