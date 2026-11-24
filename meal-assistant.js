@@ -8,7 +8,10 @@ const mealAssistant = (() => {
   let draft = '';
   let rows = [];
   let notice = '';
+  const keyStorage = 'fitforge12.geminiKey.v1';
   let sessionKey = '';
+  let savedKey = '';
+  try { savedKey = localStorage.getItem(keyStorage) || ''; } catch {}
 
   function menuEstimate(text) {
     if (typeof smartFood === 'undefined') return [];
@@ -108,8 +111,13 @@ const mealAssistant = (() => {
         <label>Or choose a photo<input class="field" type="file" name="gallery" accept="image/*"></label>
         <details>
           <summary>Gemini connection for photos and general meals</summary>
-          <p class="small muted">For AI analysis, FitForge sends the description and selected photo to Google Gemini when you tap Analyze. FitForge remembers your key while the app is open. Clear this field to forget it, or close or reload the app. Menu matches work without a key.</p>
+          <p class="small muted">For AI analysis, FitForge sends the description and selected photo to Google Gemini when you tap Analyze. Save the key to reuse it after reopening FitForge. It is stored locally on this device without encryption, separately from your food log and backups. Use Forget key on a shared device. Menu matches work without a key.</p>
           <label>Gemini API key<input class="field" name="apiKey" type="password" autocomplete="off" spellcheck="false"></label>
+          <div class="actions">
+            <button class="btn secondary" type="button" data-save-gemini>Save key</button>
+            <button class="btn secondary" type="button" data-forget-gemini>Forget key</button>
+          </div>
+          <p class="small muted" data-gemini-key-status role="status"></p>
           <a class="meal-ai-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini API key</a>
         </details>
         <button class="btn" type="submit">Analyze meal</button>
@@ -177,7 +185,36 @@ const mealAssistant = (() => {
     const status = document.getElementById('meal-ai-status');
     const {description, camera, gallery, apiKey} = form.elements;
     apiKey.value = sessionKey;
+    const keyStatus = form.querySelector('[data-gemini-key-status]');
+    keyStatus.textContent = savedKey ? 'Key saved on this device.' : 'No saved key.';
     apiKey.oninput = () => { sessionKey = apiKey.value.trim(); };
+    form.querySelector('[data-save-gemini]').onclick = () => {
+      const key = apiKey.value.trim();
+      if (!key) {
+        keyStatus.textContent = savedKey ? 'A key is already saved on this device.' : 'Enter a Gemini API key first.';
+        return;
+      }
+      try {
+        localStorage.setItem(keyStorage, key);
+        savedKey = key;
+        sessionKey = '';
+        apiKey.value = '';
+        keyStatus.textContent = 'Key saved on this device.';
+      } catch {
+        keyStatus.textContent = 'This browser could not save the key. You can still use it while FitForge is open.';
+      }
+    };
+    form.querySelector('[data-forget-gemini]').onclick = () => {
+      try {
+        localStorage.removeItem(keyStorage);
+        savedKey = '';
+        sessionKey = '';
+        apiKey.value = '';
+        keyStatus.textContent = 'Key forgotten.';
+      } catch {
+        keyStatus.textContent = 'This browser could not remove the saved key.';
+      }
+    };
     description.oninput = () => { draft = description.value; };
     camera.onchange = () => { if (camera.files.length) gallery.value = ''; };
     gallery.onchange = () => { if (gallery.files.length) camera.value = ''; };
@@ -185,8 +222,9 @@ const mealAssistant = (() => {
       event.preventDefault();
       const text = description.value.trim();
       const photo = camera.files[0] || gallery.files[0];
-      const key = sessionKey = apiKey.value.trim();
-      const button = form.querySelector('button');
+      sessionKey = apiKey.value.trim();
+      const key = sessionKey || savedKey;
+      const button = form.querySelector('button[type="submit"]');
       const local = text ? menuEstimate(text) : [];
       const needsAI = photo || !local.length || local.some(row => !row.values);
       rows = [];
