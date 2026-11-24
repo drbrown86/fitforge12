@@ -107,7 +107,9 @@ const mealAssistant = (() => {
         <label>Describe what you ate<textarea class="field" name="description" rows="3" maxlength="600"
           placeholder="I ate a steak from LongHorn with a baked potato">${escapeHtml(draft)}</textarea></label>
         <p class="small muted">Type your meal or dictate it with your phone keyboard’s microphone.</p>
-        <label>Take a plate photo<input class="field" type="file" name="camera" accept="image/*" capture="environment"></label>
+        <button class="btn secondary" type="button" data-take-photo>📷 Take photo</button>
+        <input type="file" name="camera" accept="image/*" capture="environment" hidden>
+        <span class="small muted" data-camera-status role="status"></span>
         <label>Or choose a photo<input class="field" type="file" name="gallery" accept="image/*"></label>
         ${!(savedKey || sessionKey) ? '<p class="small muted">Add a Gemini key in Settings for photo analysis and general meals.</p>' : ''}
         <button class="btn" type="submit">Analyze meal</button>
@@ -230,8 +232,17 @@ const mealAssistant = (() => {
     const status = document.getElementById('meal-ai-status');
     const {description, camera, gallery} = form.elements;
     description.oninput = () => { draft = description.value; };
-    camera.onchange = () => { if (camera.files.length) gallery.value = ''; };
-    gallery.onchange = () => { if (gallery.files.length) camera.value = ''; };
+    const cameraStatus = form.querySelector('[data-camera-status]');
+    form.querySelector('[data-take-photo]').onclick = () => camera.click();
+    camera.onchange = () => {
+      cameraStatus.textContent = camera.files.length ? 'Photo ready to analyze.' : '';
+      if (camera.files.length) gallery.value = '';
+    };
+    gallery.onchange = () => {
+      if (!gallery.files.length) return;
+      camera.value = '';
+      cameraStatus.textContent = '';
+    };
     form.onsubmit = async event => {
       event.preventDefault();
       const text = description.value.trim();
