@@ -2,3 +2,8 @@
 
 /* Meal suggestions */
 .mealfilters{display:flex;gap:7px;overflow-x:auto;padding:8px 0 15px;scrollbar-width:thin}.mealfilters .btn{flex:none;padding:10px 12px;font-size:12px}.mealideas{display:grid;gap:10px;margin-top:15px}.mealidea{padding:14px;border:1px solid #2a3851;border-radius:14px;background:#111d30}.mealidea h3{margin:4px 0 8px;font-size:16px}.mealidea p{line-height:1.5}.mealidea .btn{padding:10px 12px;white-space:nowrap}.mealidea .row{gap:10px;align-items:center}.mealidea .pill{white-space:nowrap}
+
+.smart-food .smart-result { margin-bottom: .75rem; }
+.smart-food .food-source { color: inherit; text-decoration: underline; }
+.smart-food video { display: block; width: 100%; max-height: 280px; background: #080f1e; }
+.smart-food .smart-result .actions { margin-top: .5rem; }

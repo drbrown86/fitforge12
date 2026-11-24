@@ -1,4 +1,4 @@
-const CACHE = 'fitforge12-static-v3';
+const CACHE = 'fitforge12-static-v4';
 const CACHE_PREFIX = 'fitforge12-static-';
 const APP_SCOPE = new URL(self.registration.scope);
 const APP_SHELL = new URL('index.html', APP_SCOPE);
@@ -7,6 +7,7 @@ const ASSETS = [
   './index.html',
   './style.css',
   './app.js',
+  './food-search.js',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
