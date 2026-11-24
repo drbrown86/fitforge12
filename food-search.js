@@ -12,6 +12,8 @@ const smartFood = (() => {
     ['lh-filet-9', 'LongHorn Steakhouse Flo’s Filet', '9 oz steak', [450, 56, 3, 19], longhorn],
     ['lh-ribeye-12', 'LongHorn Steakhouse Ribeye', '12 oz steak', [810, 66, 4, 54], longhorn],
     ['lh-ribeye-20', 'LongHorn Steakhouse Outlaw Ribeye', '20 oz steak', [1250, 94, 2, 87], longhorn],
+    ['lh-potato', 'LongHorn Steakhouse Plain Idaho Baked Potato', '1 potato', [290, 8, 64, 2], longhorn],
+    ['lh-potato-loaded', 'LongHorn Steakhouse Loaded Idaho Baked Potato', '1 potato', [470, 11, 65, 20], longhorn],
   ];
   const normalize = value => value.toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, ' ')
     .replace(/cheese burger/g, 'cheeseburger').trim();
@@ -290,5 +292,5 @@ const smartFood = (() => {
   }
 
   window.addEventListener('pagehide', stopCamera);
-  return {view, bind, stopCamera};
+  return {view, bind, stopCamera, restaurants};
 })();
