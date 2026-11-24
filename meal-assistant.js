@@ -109,21 +109,28 @@ const mealAssistant = (() => {
         <p class="small muted">Type your meal or dictate it with your phone keyboard’s microphone.</p>
         <label>Take a plate photo<input class="field" type="file" name="camera" accept="image/*" capture="environment"></label>
         <label>Or choose a photo<input class="field" type="file" name="gallery" accept="image/*"></label>
-        <details>
-          <summary>Gemini connection for photos and general meals</summary>
-          <p class="small muted">For AI analysis, FitForge sends the description and selected photo to Google Gemini when you tap Analyze. Save the key to reuse it after reopening FitForge. It is stored locally on this device without encryption, separately from your food log and backups. Use Forget key on a shared device. Menu matches work without a key.</p>
-          <label>Gemini API key<input class="field" name="apiKey" type="password" autocomplete="off" spellcheck="false"></label>
-          <div class="actions">
-            <button class="btn secondary" type="button" data-save-gemini>Save key</button>
-            <button class="btn secondary" type="button" data-forget-gemini>Forget key</button>
-          </div>
-          <p class="small muted" data-gemini-key-status role="status"></p>
-          <a class="meal-ai-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini API key</a>
-        </details>
+        ${!(savedKey || sessionKey) ? '<p class="small muted">Add a Gemini key in Settings for photo analysis and general meals.</p>' : ''}
         <button class="btn" type="submit">Analyze meal</button>
       </form>
       <p id="meal-ai-status" class="small muted" role="status" tabindex="-1">${escapeHtml(notice)}</p>
       <div id="meal-ai-review"></div>
+    </section>`;
+  }
+
+  function settingsView() {
+    return `<section class="card" aria-labelledby="gemini-settings-heading">
+      <h2 id="gemini-settings-heading">Gemini connection</h2>
+      <details id="gemini-settings">
+        <summary>Manage API key</summary>
+        <p class="small muted">FitForge sends meal descriptions and selected photos to Google Gemini when you tap Analyze. Saved keys stay on this device without encryption, separate from your food log and backups.</p>
+        <label>Gemini API key<input class="field" name="apiKey" type="password" autocomplete="off" spellcheck="false"></label>
+        <div class="actions">
+          <button class="btn secondary" type="button" data-save-gemini>Save key</button>
+          <button class="btn secondary" type="button" data-forget-gemini>Forget key</button>
+        </div>
+        <p class="small muted" data-gemini-key-status role="status"></p>
+        <a class="meal-ai-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini API key</a>
+      </details>
     </section>`;
   }
 
@@ -179,16 +186,15 @@ const mealAssistant = (() => {
     };
   }
 
-  function bind() {
-    const form = document.getElementById('meal-ai-form');
-    if (!form) return;
-    const status = document.getElementById('meal-ai-status');
-    const {description, camera, gallery, apiKey} = form.elements;
+  function bindSettings() {
+    const panel = document.getElementById('gemini-settings');
+    if (!panel) return;
+    const apiKey = panel.querySelector('[name="apiKey"]');
     apiKey.value = sessionKey;
-    const keyStatus = form.querySelector('[data-gemini-key-status]');
+    const keyStatus = panel.querySelector('[data-gemini-key-status]');
     keyStatus.textContent = savedKey ? 'Key saved on this device.' : 'No saved key.';
     apiKey.oninput = () => { sessionKey = apiKey.value.trim(); };
-    form.querySelector('[data-save-gemini]').onclick = () => {
+    panel.querySelector('[data-save-gemini]').onclick = () => {
       const key = apiKey.value.trim();
       if (!key) {
         keyStatus.textContent = savedKey ? 'A key is already saved on this device.' : 'Enter a Gemini API key first.';
@@ -204,7 +210,7 @@ const mealAssistant = (() => {
         keyStatus.textContent = 'This browser could not save the key. You can still use it while FitForge is open.';
       }
     };
-    form.querySelector('[data-forget-gemini]').onclick = () => {
+    panel.querySelector('[data-forget-gemini]').onclick = () => {
       try {
         localStorage.removeItem(keyStorage);
         savedKey = '';
@@ -215,6 +221,14 @@ const mealAssistant = (() => {
         keyStatus.textContent = 'This browser could not remove the saved key.';
       }
     };
+  }
+
+  function bind() {
+    bindSettings();
+    const form = document.getElementById('meal-ai-form');
+    if (!form) return;
+    const status = document.getElementById('meal-ai-status');
+    const {description, camera, gallery} = form.elements;
     description.oninput = () => { draft = description.value; };
     camera.onchange = () => { if (camera.files.length) gallery.value = ''; };
     gallery.onchange = () => { if (gallery.files.length) camera.value = ''; };
@@ -222,7 +236,6 @@ const mealAssistant = (() => {
       event.preventDefault();
       const text = description.value.trim();
       const photo = camera.files[0] || gallery.files[0];
-      sessionKey = apiKey.value.trim();
       const key = sessionKey || savedKey;
       const button = form.querySelector('button[type="submit"]');
       const local = text ? menuEstimate(text) : [];
@@ -244,7 +257,7 @@ const mealAssistant = (() => {
           rows = local;
         }
         notice = needsAI && !key ?
-          'A Gemini API key is needed for photos or foods without a menu match. You can also fill in missing macros below.' :
+          'Add a Gemini API key in Settings for photos or foods without a menu match. You can also fill in missing macros below.' :
           (rows.length ? 'Check portions and toppings before logging.' : 'No foods identified. Try a clearer photo or add meal details.');
       } catch (error) {
         if (!form.isConnected) return;
@@ -261,5 +274,5 @@ const mealAssistant = (() => {
     paint();
   }
 
-  return {view, bind};
+  return {view, settingsView, bind};
 })();
