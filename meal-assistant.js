@@ -3,7 +3,7 @@
 const mealAssistant = (() => {
   const metrics = [['calories', 'Calories', 'kcal'], ['protein', 'Protein', 'g'],
     ['carbs', 'Carbs', 'g'], ['fat', 'Fat', 'g']];
-  const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+  const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent';
   const limits = [10000, 1000, 1000, 1000];
   let draft = '';
   let rows = [];
@@ -77,9 +77,10 @@ const mealAssistant = (() => {
         },
       }),
     });
+    if (response.status === 404) throw new Error('Gemini returned HTTP 404. This model may be unavailable for your Google project.');
     if ([400, 401, 403].includes(response.status)) throw new Error('Google rejected the request. Check that your Gemini API key is active and has access.');
     if (response.status === 429) throw new Error('The Gemini quota was reached. Try again later.');
-    if (!response.ok) throw new Error('Gemini is unavailable. Try again later.');
+    if (!response.ok) throw new Error('Gemini returned HTTP ' + response.status + '. Try again later.');
     const result = await response.json();
     const raw = result.candidates?.[0]?.content?.parts?.filter(part => !part.thought).map(part => part.text || '').join('');
     if (!raw) throw new Error('Gemini returned no usable estimate. Try adding a description.');
@@ -183,7 +184,7 @@ const mealAssistant = (() => {
       const photo = camera.files[0] || gallery.files[0];
       const key = apiKey.value.trim();
       const button = form.querySelector('button');
-      const local = text && !photo ? menuEstimate(text) : [];
+      const local = text ? menuEstimate(text) : [];
       const needsAI = photo || !local.length || local.some(row => !row.values);
       rows = [];
       paint();
