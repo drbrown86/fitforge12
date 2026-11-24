@@ -54,15 +54,30 @@ const smartFood = (() => {
 
   async function openFoodFacts(term, barcode, signal) {
     const fields = 'code,product_name,brands,nutriments,serving_size,serving_quantity';
-    const path = barcode ? '/api/v2/product/' + term + '.json?fields=' + fields :
-      '/cgi/search.pl?' + new URLSearchParams({
-        search_terms: term, search_simple: '1', action: 'process', json: '1', page_size: '12', fields,
-      });
-    const response = await fetch('https://world.openfoodfacts.org' + path, {signal});
-    if (barcode && response.status === 404) return [];
-    if (!response.ok) throw new Error('Lookup unavailable');
-    const data = await response.json();
-    return (barcode ? [data.product] : data.products || []).flatMap(food => {
+    async function product(code) {
+      const url = 'https://world.openfoodfacts.org/api/v2/product/' + code + '.json?fields=' + fields;
+      const response = await fetch(url, {signal});
+      if (response.status === 404) return undefined;
+      if (!response.ok) throw new Error('Lookup unavailable');
+      return (await response.json()).product;
+    }
+
+    let products;
+    if (barcode) {
+      products = [await product(term)];
+    } else {
+      const params = new URLSearchParams({q: term, page_size: '6'});
+      const data = await json('https://search.openfoodfacts.org/search?' + params, signal);
+      const codes = [...new Set((data.hits || []).map(hit => hit.code))]
+        .filter(code => /^\d{8}$|^\d{12,14}$/.test(code));
+      const responses = await Promise.allSettled(codes.map(product));
+      products = responses.flatMap(response => response.status === 'fulfilled' ? [response.value] : []);
+      if (!products.length && responses.some(response => response.status === 'rejected')) {
+        throw new Error('Lookup unavailable');
+      }
+    }
+
+    return products.flatMap(food => {
       if (!food?.product_name || !food.code) return [];
       const names = ['energy-kcal', 'proteins', 'carbohydrates', 'fat'];
       const perServing = names.map(key => food.nutriments?.[key + '_serving']);
