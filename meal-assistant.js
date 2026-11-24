@@ -8,6 +8,7 @@ const mealAssistant = (() => {
   let draft = '';
   let rows = [];
   let notice = '';
+  let sessionKey = '';
 
   function menuEstimate(text) {
     if (typeof smartFood === 'undefined') return [];
@@ -107,7 +108,7 @@ const mealAssistant = (() => {
         <label>Or choose a photo<input class="field" type="file" name="gallery" accept="image/*"></label>
         <details>
           <summary>Gemini connection for photos and general meals</summary>
-          <p class="small muted">For AI analysis, FitForge sends the description and selected photo to Google Gemini when you tap Analyze. The key is used for this request and isn’t saved with your food log. Menu matches work without a key.</p>
+          <p class="small muted">For AI analysis, FitForge sends the description and selected photo to Google Gemini when you tap Analyze. FitForge remembers your key while the app is open. Clear this field to forget it, or close or reload the app. Menu matches work without a key.</p>
           <label>Gemini API key<input class="field" name="apiKey" type="password" autocomplete="off" spellcheck="false"></label>
           <a class="meal-ai-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini API key</a>
         </details>
@@ -175,6 +176,8 @@ const mealAssistant = (() => {
     if (!form) return;
     const status = document.getElementById('meal-ai-status');
     const {description, camera, gallery, apiKey} = form.elements;
+    apiKey.value = sessionKey;
+    apiKey.oninput = () => { sessionKey = apiKey.value.trim(); };
     description.oninput = () => { draft = description.value; };
     camera.onchange = () => { if (camera.files.length) gallery.value = ''; };
     gallery.onchange = () => { if (gallery.files.length) camera.value = ''; };
@@ -182,7 +185,7 @@ const mealAssistant = (() => {
       event.preventDefault();
       const text = description.value.trim();
       const photo = camera.files[0] || gallery.files[0];
-      const key = apiKey.value.trim();
+      const key = sessionKey = apiKey.value.trim();
       const button = form.querySelector('button');
       const local = text ? menuEstimate(text) : [];
       const needsAI = photo || !local.length || local.some(row => !row.values);
@@ -196,7 +199,6 @@ const mealAssistant = (() => {
       notice = status.textContent = 'Analyzing meal…';
       try {
         if (needsAI && key) {
-          apiKey.value = '';
           const estimates = await analyze(text, photo, key);
           if (!form.isConnected) return;
           rows = estimates;
